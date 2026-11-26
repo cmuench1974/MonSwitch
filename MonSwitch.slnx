@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MonSwitch.Core/MonSwitch.Core.csproj" />
+    <Project Path="src/MonSwitch/MonSwitch.csproj" />
+    <Project Path="src/MonSwitch.Settings/MonSwitch.Settings.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MonSwitch.Core.Tests/MonSwitch.Core.Tests.csproj" />
+  </Folder>
+</Solution>
