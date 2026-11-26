@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  push:
+    branches: [ DEV ]
+  pull_request:
+    branches: [ main, DEV ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Tests
+        run: dotnet test MonSwitch.slnx -c Release
+
+      - name: Publish
+        shell: pwsh
+        run: ./build.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MonSwitch-win-x64
+          path: artifacts/MonSwitch/*
