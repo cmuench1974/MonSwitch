@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Hintergrundprozess: reines Win32 (kein WinForms/WPF), damit der Speicherbedarf minimal bleibt. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>MonSwitch</AssemblyName>
+    <RootNamespace>MonSwitch.Agent</RootNamespace>
+    <ApplicationIcon>..\..\assets\MonSwitch.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EventSourceSupport>false</EventSourceSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonSwitch.Core\MonSwitch.Core.csproj" />
+    <EmbeddedResource Include="..\..\assets\MonSwitch.ico" LogicalName="MonSwitch.ico" />
+    <EmbeddedResource Include="..\..\assets\MonSwitchPaused.ico" LogicalName="MonSwitchPaused.ico" />
+  </ItemGroup>
+
+</Project>
