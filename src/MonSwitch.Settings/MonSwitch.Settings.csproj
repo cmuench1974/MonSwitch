@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Konfigurationsoberfläche: separater Prozess, läuft nur, solange das Fenster geöffnet ist. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>MonSwitch.Settings</AssemblyName>
+    <RootNamespace>MonSwitch.Settings</RootNamespace>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>..\..\assets\MonSwitch.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
+    <!-- Dunkelmodus von WinForms ist in .NET 10 noch als experimentell markiert. -->
+    <NoWarn>$(NoWarn);WFO5001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonSwitch.Core\MonSwitch.Core.csproj" />
+    <EmbeddedResource Include="..\..\assets\MonSwitch.ico" LogicalName="MonSwitch.ico" />
+  </ItemGroup>
+
+</Project>
