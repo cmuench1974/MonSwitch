@@ -251,6 +251,32 @@ public class ConfigTests
     }
 }
 
+public class ToggleTargetTests
+{
+    private const int Dp1 = 0x0F, Hdmi2 = 0x12;
+    private static readonly MonitorAction Toggle = new() { MonitorName = "LG", InputA = Dp1, InputB = Hdmi2 };
+
+    [Theory]
+    // LG-Befehl: VCP 0x60 meldet weiter DisplayPort 1 – der gemerkte Eingang (HDMI 2) entscheidet → zurück auf DP 1.
+    [InlineData(true, Dp1, Hdmi2, Dp1)]
+    [InlineData(true, Dp1, Dp1, Hdmi2)]
+    // LG-Befehl ohne gemerkten Eingang: gelesener Wert.
+    [InlineData(true, Dp1, null, Hdmi2)]
+    // Standardbefehl: der gelesene Wert hat Vorrang (z. B. nach Umschalten am Monitor selbst).
+    [InlineData(false, Hdmi2, Dp1, Dp1)]
+    [InlineData(false, Dp1, Hdmi2, Hdmi2)]
+    // Standardbefehl, Lesen fehlgeschlagen: gemerkter Eingang.
+    [InlineData(false, null, Hdmi2, Dp1)]
+    // Nichts bekannt: erster Eingang.
+    [InlineData(false, null, null, Dp1)]
+    public void ChoosesToggleTarget(bool lg, int? read, int? remembered, int expected) =>
+        Assert.Equal(expected, SwitchExecutor.ChooseTarget(Toggle, BindingMode.Toggle, lg, read, remembered));
+
+    [Fact]
+    public void SetModeAlwaysUsesFirstInput() =>
+        Assert.Equal(Dp1, SwitchExecutor.ChooseTarget(Toggle, BindingMode.Set, true, Dp1, Dp1));
+}
+
 public class LgInputTests
 {
     [Theory]

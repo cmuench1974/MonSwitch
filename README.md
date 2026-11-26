@@ -100,6 +100,9 @@ wird **nur übernommen, wenn dies erneut mit „Trotzdem übernehmen“ bestäti
   auf „Standard“ oder „LG-Befehl“ festlegen. Codes: DisplayPort 1 = `0xD0`, DisplayPort 2 = `0xD1`,
   HDMI 1 = `0x90`, HDMI 2 = `0x91`, USB-C = `0xD2` (Standardeingänge werden automatisch umgerechnet,
   abweichende LG-Codes können direkt eingegeben werden).
+  Solche Monitore melden den aktuellen Eingang nicht korrekt. Beim Hin- und Herschalten richtet sich MonSwitch
+  daher nach dem zuletzt selbst gesetzten Eingang (`%LOCALAPPDATA%\MonSwitch\lastinput.txt`). Wurde der Eingang
+  zwischendurch am Monitor selbst umgestellt, ist ggf. ein zweiter Tastendruck nötig.
 - **Herstellerspezifische Codes:** Manche Monitore (u. a. einige Samsung-Modelle) verwenden andere Werte als der
   Standard. Den passenden Code ggf. im Editor direkt eingeben.
 - **Konfiguration:** `%APPDATA%\MonSwitch\config.json`
