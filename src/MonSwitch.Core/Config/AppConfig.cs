@@ -73,7 +73,21 @@ public sealed class HotkeyBinding
         return string.Join("; ", parts);
     }
 
+    [JsonIgnore]
     public string DisplayName => string.IsNullOrWhiteSpace(Name) ? DescribeActions() : Name!;
+}
+
+/// <summary>Befehl, mit dem der Eingang eines Monitors umgeschaltet wird.</summary>
+public enum SwitchMethod
+{
+    /// <summary>LG-Monitore: LG-Befehl, sofern der Grafiktreiber ihn senden kann – sonst Standardbefehl.</summary>
+    Auto,
+
+    /// <summary>MCCS-Standard: VCP 0x60 über die DDC/CI-Schnittstelle von Windows.</summary>
+    Standard,
+
+    /// <summary>LG-spezifisch: VCP 0xF4 mit Quelladresse 0x50 (siehe <see cref="LgInput"/>).</summary>
+    Lg,
 }
 
 public sealed class MonitorAction
@@ -87,6 +101,8 @@ public sealed class MonitorAction
 
     /// <summary>Zweiter Eingang – nur im Modus <see cref="BindingMode.Toggle"/>.</summary>
     public int? InputB { get; set; }
+
+    public SwitchMethod Method { get; set; } = SwitchMethod.Auto;
 }
 
 public sealed class MonitorCacheEntry

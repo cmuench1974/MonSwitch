@@ -25,6 +25,7 @@ internal sealed class BindingEditorForm : Form
     private readonly RadioButton _modeToggle = new() { Text = "Zwischen zwei Eingängen hin- und herschalten", AutoSize = true };
     private readonly TableLayoutPanel _monitorTable = new() { AutoSize = true, ColumnCount = 4, Dock = DockStyle.Top };
     private readonly Button _test = new() { Text = "Jetzt testen", AutoSize = true, MinimumSize = new Size(110, 0) };
+    private readonly ToolTip _toolTip = new() { AutoPopDelay = 20000 };
 
     private bool _updatingModifiers;
     private List<HotkeyConflict> _currentConflicts = [];
@@ -153,6 +154,13 @@ internal sealed class BindingEditorForm : Form
         _hotkey.Focus();
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+            _toolTip.Dispose();
+        base.Dispose(disposing);
+    }
+
     /// <summary>Breite der rechten Spalte in logischen Pixeln (96 DPI).</summary>
     private const int ContentWidth = 540;
 
@@ -167,10 +175,12 @@ internal sealed class BindingEditorForm : Form
         public required ComboBox InputA { get; init; }
         public required Label LabelB { get; init; }
         public required ComboBox InputB { get; init; }
+        public ComboBox? Method { get; init; }
     }
 
     // Je Monitor zwei Zeilen:  [x] Name (DISPLAYn) · aktuell: …
     //                              Eingang: [▼]   Zweiter Eingang: [▼]
+    // LG-Monitore zusätzlich:      Befehl:  [▼]
     private void BuildMonitorRows(HotkeyBinding binding, IReadOnlyList<MonitorChoice> monitors)
     {
         if (monitors.Count == 0)
@@ -208,8 +218,19 @@ internal sealed class BindingEditorForm : Form
             SetComboValue(inputA, action?.InputA ?? defaultA);
             SetComboValue(inputB, action?.InputB ?? defaultB);
 
-            include.CheckedChanged += (_, _) => { inputA.Enabled = inputB.Enabled = include.Checked; };
-            inputA.Enabled = inputB.Enabled = include.Checked;
+            // Umschaltbefehl nur bei LG-Monitoren anbieten (bzw. wenn bereits von „Automatisch“ abweichend gewählt).
+            ComboBox? method = m.IsLg || action?.Method is SwitchMethod.Standard or SwitchMethod.Lg
+                ? CreateMethodCombo(m, action?.Method ?? SwitchMethod.Auto)
+                : null;
+
+            void UpdateEnabled()
+            {
+                inputA.Enabled = inputB.Enabled = include.Checked;
+                if (method != null)
+                    method.Enabled = include.Checked;
+            }
+            include.CheckedChanged += (_, _) => UpdateEnabled();
+            UpdateEnabled();
 
             var labelA = new Label { Text = "Eingang:", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(22, 3, 3, 3) };
             var labelB = new Label { Text = "Zweiter Eingang:", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(12, 3, 3, 3) };
@@ -222,6 +243,18 @@ internal sealed class BindingEditorForm : Form
             _monitorTable.Controls.Add(labelB, 2, row);
             _monitorTable.Controls.Add(inputB, 3, row);
             row++;
+            if (method != null)
+            {
+                _monitorTable.Controls.Add(new Label { Text = "Befehl:", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(22, 3, 3, 3) }, 0, row);
+                _monitorTable.Controls.Add(method, 1, row);
+                if (!LgInput.IsTransportAvailable)
+                {
+                    var note = new Label { Text = "LG-Befehl nur mit AMD-Grafikkarte", AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = Ui.HintColor, Margin = new Padding(12, 3, 3, 3) };
+                    _monitorTable.Controls.Add(note, 2, row);
+                    _monitorTable.SetColumnSpan(note, 2);
+                }
+                row++;
+            }
             if (!m.InputsFromMonitor)
             {
                 var info = new Label
@@ -235,8 +268,23 @@ internal sealed class BindingEditorForm : Form
                 _monitorTable.SetColumnSpan(info, 4);
                 row++;
             }
-            _rows.Add(new MonitorRow { Monitor = m, Include = include, InputA = inputA, LabelB = labelB, InputB = inputB });
+            _rows.Add(new MonitorRow { Monitor = m, Include = include, InputA = inputA, LabelB = labelB, InputB = inputB, Method = method });
         }
+    }
+
+    /// <summary>Einträge in der Reihenfolge von <see cref="SwitchMethod"/> (Index = Enum-Wert).</summary>
+    private ComboBox CreateMethodCombo(MonitorChoice monitor, SwitchMethod selected)
+    {
+        var combo = new InputComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
+        combo.Items.Add(monitor.IsLg && LgInput.IsTransportAvailable ? "Automatisch (LG-Befehl)" : "Automatisch (Standard)");
+        combo.Items.Add("Standard (VCP 0x60)");
+        combo.Items.Add("LG-Befehl (VCP 0xF4)");
+        combo.SelectedIndex = (int)selected;
+        _toolTip.SetToolTip(combo,
+            "Viele LG-Monitore ignorieren den Standardbefehl zum Umschalten des Eingangs und reagieren nur auf einen\n"
+            + "LG-spezifischen Befehl. Diesen sendet MonSwitch über den Grafiktreiber (derzeit AMD).\n"
+            + "Falls Ihr LG-Monitor damit nicht umschaltet, „Standard“ wählen und „Jetzt testen“.");
+        return combo;
     }
 
     /// <summary>Ignoriert das Mausrad, solange die Liste zugeklappt ist (sonst ändert Scrollen beim Überfahren versehentlich den Eingang).</summary>
@@ -363,7 +411,14 @@ internal sealed class BindingEditorForm : Form
                 }
                 b = parsedB;
             }
-            actions.Add(new MonitorAction { MonitorId = r.Monitor.Id, MonitorName = r.Monitor.Name, InputA = a, InputB = b });
+            actions.Add(new MonitorAction
+            {
+                MonitorId = r.Monitor.Id,
+                MonitorName = r.Monitor.Name,
+                InputA = a,
+                InputB = b,
+                Method = r.Method is { SelectedIndex: >= 0 } combo ? (SwitchMethod)combo.SelectedIndex : SwitchMethod.Auto,
+            });
         }
 
         if (actions.Count == 0)

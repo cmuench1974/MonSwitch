@@ -39,7 +39,19 @@ public static class SwitchExecutor
                     target = current is int c && InputSources.Matches(c, action.InputA) ? inputB : action.InputA;
                 }
 
-                if (monitor.TrySetInput(target))
+                if (UseLgCommand(action.Method, monitor))
+                {
+                    if (LgInput.TrySet(monitor, target, out string? error))
+                    {
+                        LastSet[monitor.Id] = target;
+                        done.Add($"{monitor.Name}: {InputSources.GetName(target)} (LG-Befehl)");
+                    }
+                    else
+                    {
+                        errors.Add($"„{monitor.Name}“: {error}");
+                    }
+                }
+                else if (monitor.TrySetInput(target))
                 {
                     LastSet[monitor.Id] = target;
                     done.Add($"{monitor.Name}: {InputSources.GetName(target)}");
@@ -55,4 +67,12 @@ public static class SwitchExecutor
             Log.Error($"Umschalten ({binding.Hotkey}): {e}");
         return new SwitchResult(errors.Count == 0, errors, done);
     }
+
+    /// <summary>Automatisch: LG-Befehl für LG-Monitore, sofern der Grafiktreiber ihn senden kann.</summary>
+    private static bool UseLgCommand(SwitchMethod method, PhysicalMonitor monitor) => method switch
+    {
+        SwitchMethod.Lg => true,
+        SwitchMethod.Standard => false,
+        _ => LgInput.IsLgMonitor(monitor.Id) && LgInput.IsTransportAvailable,
+    };
 }

@@ -16,6 +16,7 @@ internal sealed class MonitorChoice
     public int? CurrentInput { get; init; }
     public required IReadOnlyList<int> Inputs { get; init; }
     public bool InputsFromMonitor { get; init; }
+    public bool IsLg => LgInput.IsLgMonitor(Id);
 
     public static List<MonitorChoice> Build(IReadOnlyList<DetectedMonitor> detected, AppConfig config)
     {

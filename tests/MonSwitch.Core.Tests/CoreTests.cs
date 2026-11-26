@@ -232,4 +232,52 @@ public class ConfigTests
         };
         Assert.Equal("LG: DisplayPort 1 ⇄ HDMI 1", b.DescribeActions());
     }
+
+    [Fact]
+    public void RoundTripsSwitchMethodAndDefaultsToAuto()
+    {
+        var config = new AppConfig
+        {
+            Bindings = [new HotkeyBinding { Key = 'M', Actions = [new MonitorAction { MonitorName = "LG", InputA = 0x12, Method = SwitchMethod.Standard }] }],
+        };
+        string json = ConfigStore.Serialize(config);
+        Assert.Contains("\"method\": \"Standard\"", json);
+        Assert.DoesNotContain("displayName", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(SwitchMethod.Standard, ConfigStore.Deserialize(json).Bindings[0].Actions[0].Method);
+
+        // Konfigurationen ohne „method“ (Version 1.0) verwenden die automatische Auswahl.
+        var old = ConfigStore.Deserialize("""{ "bindings": [ { "key": 77, "actions": [ { "monitorName": "LG", "inputA": 15 } ] } ] }""");
+        Assert.Equal(SwitchMethod.Auto, old.Bindings[0].Actions[0].Method);
+    }
+}
+
+public class LgInputTests
+{
+    [Theory]
+    [InlineData(@"\\?\DISPLAY#GSM9E9D#7&3658f4a&0&UID264#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}", true)]
+    [InlineData(@"\\?\DISPLAY#gsm5B7F#5&1a2b3c&0&UID4352#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}", true)]
+    [InlineData(@"\\?\DISPLAY#DELA1B2#5&1a2b3c&0&UID4352#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}", false)]
+    [InlineData(@"\\.\DISPLAY1#0", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void RecognizesLgMonitors(string? id, bool expected) => Assert.Equal(expected, LgInput.IsLgMonitor(id));
+
+    [Theory]
+    [InlineData(0x0F, 0xD0)] // DisplayPort 1
+    [InlineData(0x10, 0xD1)] // DisplayPort 2
+    [InlineData(0x11, 0x90)] // HDMI 1
+    [InlineData(0x12, 0x91)] // HDMI 2
+    [InlineData(0x1B, 0xD2)] // USB-C
+    [InlineData(0x90, 0x90)] // von Hand eingegebener LG-Code bleibt unverändert
+    public void MapsStandardCodesToLgCodes(int input, int expected) => Assert.Equal(expected, LgInput.ToLgCode(input));
+
+    [Fact]
+    public void BuildsSetVcpPacketWithChecksum() =>
+        // Auf dem Testmonitor (LG ULTRAGEAR+, AMD RX 6900 XT) verifiziert: schaltet auf DisplayPort 1.
+        Assert.Equal([0x6E, 0x50, 0x84, 0x03, 0xF4, 0x00, 0xD0, 0x9D], LgInput.BuildSetVcpPacket(0x50, 0xF4, 0x00D0));
+
+    [Fact]
+    public void ChecksumCoversAllBytesIncludingDestination() =>
+        // Quelladresse 0x51 = normaler Host; Prüfsumme = XOR über alle Bytes einschließlich 0x6E.
+        Assert.Equal([0x6E, 0x51, 0x84, 0x03, 0x10, 0x00, 0x32, 0x9A], LgInput.BuildSetVcpPacket(0x51, 0x10, 50));
 }

@@ -13,6 +13,7 @@ Infobereich der Taskleiste (Systray) konfiguriert.
 - **Zwei Modi:** auf einen festen Eingang schalten oder zwischen zwei Eingängen hin- und herschalten
 - **Mehrere Monitore gleichzeitig** mit einer Tastenkombination umschalten (z. B. beide Monitore auf den Laptop)
 - **Automatische Erkennung** der Monitore, des aktuellen Eingangs und der unterstützten Eingänge (Capabilities)
+- **LG-Monitore**, die den Standardbefehl ignorieren, werden über den LG-spezifischen Befehl umgeschaltet (AMD-Grafik)
 - **Konfliktprüfung** beim Festlegen einer Tastenkombination – bei einem Konflikt erscheint ein Hinweis,
   übernommen wird die Kombination nur nach ausdrücklicher erneuter Bestätigung (siehe unten)
 - **Tray-Menü:** Einstellungen, „Jetzt umschalten“, Tastenkombinationen pausieren, Autostart, Beenden
@@ -92,8 +93,15 @@ wird **nur übernommen, wenn dies erneut mit „Trotzdem übernehmen“ bestäti
 - **Zurückschalten:** Nach dem Umschalten auf ein anderes Gerät zeigt der Monitor dieses an. Ob der Monitor
   danach noch Befehle von diesem PC annimmt, hängt vom Modell ab – am zuverlässigsten ist MonSwitch (oder ein
   vergleichbares Tool) auf jedem beteiligten Gerät.
-- **Herstellerspezifische Codes:** Manche Monitore (u. a. einige LG- und Samsung-Modelle) verwenden andere Werte
-  als der Standard. Den passenden Code ggf. im Editor direkt eingeben.
+- **LG-Monitore:** Viele LG-Modelle (u. a. UltraGear) bestätigen den Standardbefehl (VCP `0x60`), ignorieren ihn
+  aber und schalten nur über das LG-Register `0xF4` mit der DDC/CI-Quelladresse `0x50` um. Dieses Paket kann
+  Windows selbst nicht senden; MonSwitch schickt es deshalb über den Grafiktreiber – derzeit mit
+  **AMD-Grafikkarten** (ADL). Bei LG-Monitoren geschieht das automatisch; im Editor lässt sich der Befehl je Monitor
+  auf „Standard“ oder „LG-Befehl“ festlegen. Codes: DisplayPort 1 = `0xD0`, DisplayPort 2 = `0xD1`,
+  HDMI 1 = `0x90`, HDMI 2 = `0x91`, USB-C = `0xD2` (Standardeingänge werden automatisch umgerechnet,
+  abweichende LG-Codes können direkt eingegeben werden).
+- **Herstellerspezifische Codes:** Manche Monitore (u. a. einige Samsung-Modelle) verwenden andere Werte als der
+  Standard. Den passenden Code ggf. im Editor direkt eingeben.
 - **Konfiguration:** `%APPDATA%\MonSwitch\config.json`
 - **Protokoll (nur Fehler):** `%LOCALAPPDATA%\MonSwitch\monswitch.log`
 - **Beenden per Kommandozeile:** `MonSwitch.exe --exit`
